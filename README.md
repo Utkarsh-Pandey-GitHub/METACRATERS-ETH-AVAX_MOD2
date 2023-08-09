@@ -1,34 +1,105 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# METACRAFTERES PROJECT-2
 
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+## SETUP
+to install dependencies
+```shell
+yarn
 ```
+## Functions of the project
+### Connect wallet
+Any wallet which is used cryprocurrencies is present in the window object.
+that wallet can be fetched to be used in the Dapp.
+here is the code of how app is connect to the wallet in the metamask.
+```javascript
+export default function ConnectWallet() {
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+    async function connect (){
+      if (typeof window.ethereum !== "undefined") {
+        
+        console.log("I see a metamask")
+        await window.ethereum.request({method: 'eth_requestAccounts'})
+        document.getElementById('connectWalletBtn').innerHTML="Connected"
+        console.log("metamask is now connected")
+        
+      } else {
+        document.getElementById('connectWalletBtn').innerHTML="Install Metamask"
+        console.log("No metamask")
+      }
+    }
+    
+  
+    return (
+        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold   text-center md:ml-5 sm:ml-3 ml-7 p-2 mt-32 rounded-full" onClick={()=>{connect();}} id='connectWalletBtn'>
+          Connect to your metacraft wallet
+        </button>
+    )
+  }
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```
+### Get balance of the contract
+any deployed contract has a property called getBalance which is used here to display the balance
+```javascript
+async function getBal() {
+  const d = new Date()
+  const day = d.getDay()
+  const month = d.getMonth()
+  const year = d.getFullYear()
+  if (typeof window.ethereum !== "undefined") {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+    await provider.getBalance(contractAddress).then((data)=>{
+      const bal=data 
+      console.log(ethers.utils.formatEther(bal));
+      document.getElementById('getBalButton').innerHTML = `Funds raised till ${day}-${month}-${year} is 
+      ${ethers.utils.formatEther(bal)}`
+    }).catch((err)=>{console.error(err);})
+  }
+```
+### Fund the contract with user provided number of tokens
+Here is the most important function in this contract .
+Fund() is a function which is defined in the contract itself, this is payable function which is used to send some value to the contract; this value can be sent by anyone who uses this contract. 
+This function is actually accessed through the ABI of the contract after its deployment.
+```solidity
 
-## Learn More
+```
+```javascript
+function Fund() {
+  let amount = document.getElementById('amt').value
+  console.log(`Funding the contract with ${amount}`);
+  if (typeof window.ethereum !== "undefined") {
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    const signer = provider.getSigner()
+    
+    const contract = new ethers.Contract(contractAddress, abi, signer)
+    console.log(contract);
+    try {
+      let txRes = {}
+      contract.fund({
+        value: ethers.utils.parseEther(amount)
+      })
+      .then((data) => { 
+        listenForTransactionMine(data,provider).then((data)=>{console.log(data);}).catch((err)=>{console.log(err);}); })
+      .catch((err) => { console.log(err); })
 
-To learn more about Next.js, take a look at the following resources:
+      
+      document.getElementById('fund').innerHTML = "Funded"
+      console.log("done"); 
+    } catch (err) {
+      console.error(err); 
+    }
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+    function listenForTransactionMine(transactionResponse, provider) {
+  console.log(`Mining ${transactionResponse.hash}...`)
+  return new Promise((resolve, reject) => {
+    provider.once(transactionResponse.hash, (transactionReceipt) => {
+      console.log(
+        `Completed with ${transactionReceipt.confirmations}confirmations`
+      );
+      resolve("transaction mined")
+    })
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+  })
+}
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```
