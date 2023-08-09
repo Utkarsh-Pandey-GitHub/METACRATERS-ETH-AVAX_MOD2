@@ -60,9 +60,16 @@ async function getBal() {
 Here is the most important function in this contract .
 Fund() is a function which is defined in the contract itself, this is payable function which is used to send some value to the contract; this value can be sent by anyone who uses this contract. 
 This function is actually accessed through the ABI of the contract after its deployment.
-```solidity
 
+Here is the solidity code of fund()
+```solidity
+function fund() public payable {
+        require(msg.value.getConversionRate() >= MINIMUM_USD, "You need to spend more ETH!");
+        addressToAmountFunded[msg.sender] += msg.value;
+        funders.push(msg.sender);
+    }
 ```
+And here is its javascript implementation
 ```javascript
 function Fund() {
   let amount = document.getElementById('amt').value
